@@ -1,18 +1,15 @@
-const express = require('express');
-const router = express.Router(); // Use express.Router() here too
+const { Router } = require('express');
 const { authenticateUser } = require('../middleware/auth');
-const { getCommunity, postMessage, postReply } = require('../controllers/communityController');
+const { createThread, listThreads, getThread, postMessage } = require('../controllers/communityController');
 
-// All community routes require authentication
+const router = Router();
+
 router.use(authenticateUser);
-
-// Get community messages
-router.get('/', getCommunity);
-
-// Post a new message
-router.post('/messages', postMessage);
-
-// Post a reply to a message
-router.post('/messages/:messageId/replies', postReply);
+router.get('/', listThreads);
+router.post('/', createThread);
+router.post('/:threadId/messages', postMessage);
+router.get('/:threadId', getThread);
 
 module.exports = router;
+
+

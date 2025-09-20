@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import api from '../../api'
 import io from 'socket.io-client'
+import '../css/teacher.css'
 
 export default function TeacherDashboard() {
   const [teacher, setTeacher] = useState(null)
@@ -16,7 +17,7 @@ export default function TeacherDashboard() {
   const [newThread, setNewThread] = useState({ title: '' })
   const [chatByThread, setChatByThread] = useState({})
 
-  // Modals visibilitys
+  // Modals visibility
   const [showCreateCourse, setShowCreateCourse] = useState(false)
   const [showAddMaterials, setShowAddMaterials] = useState(false)
   const [showCreateQuiz, setShowCreateQuiz] = useState(false)

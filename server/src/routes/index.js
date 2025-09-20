@@ -1,6 +1,4 @@
-const express = require('express');
-const router = express.Router(); // This is the correct way to create a router
-
+const { Router } = require('express');
 const authRoutes = require('./auth');
 const courseRoutes = require('./courses');
 const quizRoutes = require('./quizzes');
@@ -13,7 +11,7 @@ const competitionRoutes = require('./competitions');
 const gameRoutes = require('./games');
 const teacherRoutes = require('./teachers');
 
-// Remove this line: const router = Router();
+const router = Router();
 
 router.get('/', (req, res) => {
   res.json({ message: 'EcoLearn API v1' });
@@ -30,7 +28,8 @@ router.use('/progress', progressRoutes);
 router.use('/competitions', competitionRoutes);
 router.use('/games', gameRoutes);
 router.use('/teachers', teacherRoutes);
-// Fix this duplicate line - it should probably be a different route
-// router.use('/files', teacherRoutes); // getFile handler uses /files/:fileId
+router.use('/files', teacherRoutes); // getFile handler uses /files/:fileId
 
 module.exports = router;
+
+

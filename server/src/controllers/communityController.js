@@ -1,133 +1,65 @@
-const Community = require('../models/Community');
+const Thread = require('../models/Community');
+const { broadcast } = require('../services/realtime');
 
-// Get or create the single community instance
-async function getCommunityInstance() {
+async function createThread(req, res) {
   try {
-    let community = await Community.findOne();
-    if (!community) {
-      community = await Community.create({
-        name: "EcoLearn Community",
-        description: "A place for students and teachers to connect"
-      });
-      console.log("Created new community instance");
-    }
-    return community;
-  } catch (error) {
-    console.error("Error getting community instance:", error);
-    throw error;
+    const { title, course } = req.body;
+    const thread = await Thread.create({ title, course, messages: [] });
+    try { broadcast('community:thread', { threadId: thread._id, title: thread.title }); } catch (e) {}
+    res.status(201).json({ data: thread });
+  } catch (err) {
+    res.status(500).json({ error: { message: 'Failed to create thread' } });
   }
 }
 
-async function getCommunity(req, res) {
+async function listThreads(req, res) {
   try {
-    const community = await getCommunityInstance();
-    const populatedCommunity = await Community.findById(community._id)
-      .populate('messages.author', 'name role email')
-      .populate('messages.replies.author', 'name role email')
+    const { course } = req.query;
+    const filter = course ? { course } : {};
+    const threads = await Thread.find(filter)
+      .sort({ updatedAt: -1 })
       .lean();
-      
-    // Sort messages by createdAt ascending
-    if (populatedCommunity.messages) {
-      populatedCommunity.messages.sort(
-        (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
-      );
-    }
-    
-    res.json({ data: populatedCommunity });
+    // Ensure messages are sorted and authors are populated for summary view is heavy; keep ids here
+    res.json({ data: threads });
   } catch (err) {
-    console.error('Error getting community:', err);
-    res.status(500).json({ error: { message: 'Failed to get community messages' } });
+    res.status(500).json({ error: { message: 'Failed to list threads' } });
+  }
+}
+
+async function getThread(req, res) {
+  try {
+    const { threadId } = req.params;
+    const thread = await Thread.findById(threadId)
+      .populate('messages.author', 'name email')
+      .lean();
+    if (!thread) return res.status(404).json({ error: { message: 'Not found' } });
+    // Sort messages by createdAt ascending
+    thread.messages = (thread.messages || []).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    res.json({ data: thread });
+  } catch (err) {
+    res.status(500).json({ error: { message: 'Failed to get thread' } });
   }
 }
 
 async function postMessage(req, res) {
   try {
     const { content } = req.body;
-    
-    if (!content || !content.trim()) {
-      return res.status(400).json({ error: { message: 'Message content is required' } });
-    }
-    
-    const community = await getCommunityInstance();
-    const authorId = req.user.id || req.user._id;
-    
-    console.log("Posting message from user:", authorId, "Content:", content);
-    
-    // Add the new message
-    community.messages.push({
-      author: authorId,
-      content: content.trim(),
-      replies: []
-    });
-    
-    // Save the community
-    await community.save();
-    console.log("Message saved successfully");
-    
-    // Get the fully populated community
-    const populated = await Community.findById(community._id)
-      .populate('messages.author', 'name role email')
-      .populate('messages.replies.author', 'name role email')
-      .lean();
-      
-    // Sort messages by createdAt ascending
-    if (populated.messages) {
-      populated.messages.sort(
-        (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
-      );
-    }
-    
+    const { threadId } = req.params;
+    await Thread.findByIdAndUpdate(
+      threadId,
+      { $push: { messages: { author: req.user.id, content } } },
+      { new: true }
+    );
+    const populated = await Thread.findById(threadId).populate('messages.author','name email').lean();
+    if (!populated) return res.status(404).json({ error: { message: 'Not found' } });
+    populated.messages = (populated.messages || []).sort((a,b)=> new Date(a.createdAt) - new Date(b.createdAt));
+    try { broadcast('community:message', { threadId, content, author: req.user.id }); } catch (e) {}
     res.json({ data: populated });
   } catch (err) {
-    console.error('Error posting message:', err);
-    res.status(500).json({ error: { message: 'Failed to post message', details: err.message } });
+    res.status(500).json({ error: { message: 'Failed to post message' } });
   }
 }
 
-async function postReply(req, res) {
-  try {
-    const { content } = req.body;
-    const { messageId } = req.params;
-    
-    if (!content || !content.trim()) {
-      return res.status(400).json({ error: { message: 'Reply content is required' } });
-    }
-    
-    const community = await getCommunityInstance();
-    const authorId = req.user.id || req.user._id;
-    
-    // Find the message and add reply
-    const message = community.messages.id(messageId);
-    if (!message) {
-      return res.status(404).json({ error: { message: 'Message not found' } });
-    }
-    
-    message.replies.push({
-      author: authorId,
-      content: content.trim()
-    });
-    
-    // Save the community
-    await community.save();
-    
-    // Get the fully populated community
-    const populated = await Community.findById(community._id)
-      .populate('messages.author', 'name role email')
-      .populate('messages.replies.author', 'name role email')
-      .lean();
-      
-    // Sort messages by createdAt ascending
-    if (populated.messages) {
-      populated.messages.sort(
-        (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
-      );
-    }
-    
-    res.json({ data: populated });
-  } catch (err) {
-    console.error('Error posting reply:', err);
-    res.status(500).json({ error: { message: 'Failed to post reply', details: err.message } });
-  }
-}
+module.exports = { createThread, listThreads, getThread, postMessage };
 
-module.exports = { getCommunity, postMessage, postReply };
+
