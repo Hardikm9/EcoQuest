@@ -48,7 +48,15 @@ export default function Login() {
       const res = await axios.post('/api/auth/login', { email, password })
       let payload = res.data.data
       localStorage.setItem('ecolearn_user', JSON.stringify(payload))
-      navigate('/app')
+      
+      // Redirect based on role
+      if (payload.role === 'teacher') {
+        navigate('/app/teacher')
+      } else if (payload.role === 'student') {
+        navigate('/app/student')
+      } else {
+        navigate('/app') // Fallback
+      }
     } catch (err) {
       setError('Invalid credentials')
     }
@@ -70,7 +78,15 @@ export default function Login() {
             const res = await axios.post('/api/auth/google', { idToken, role: roleRef.current })
             const payload = res.data.data
             localStorage.setItem('ecolearn_user', JSON.stringify(payload))
-            navigate('/app')
+            
+            // Redirect based on role for Google login
+            if (payload.role === 'teacher') {
+              navigate('/app/teacher')
+            } else if (payload.role === 'student') {
+              navigate('/app/student')
+            } else {
+              navigate('/app') // Fallback
+            }
           } catch (e) {
             setError('Google login failed')
           }
@@ -156,5 +172,3 @@ export default function Login() {
     </div>
   )
 }
-
-

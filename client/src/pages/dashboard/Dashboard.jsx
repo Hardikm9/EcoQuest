@@ -11,6 +11,7 @@ import QuizPlay from './QuizPlay.jsx'
 import AssignmentSubmit from './AssignmentSubmit.jsx'
 import axios from 'axios'
 import api from '../../api'
+import '../css/student.css'
 
 function Nav({ role }) {
   return (

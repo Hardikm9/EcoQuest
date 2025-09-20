@@ -85,7 +85,14 @@ export default function TeacherDashboard() {
   const isApproved = !!teacher?.isApproved
 
   return (
-    <div>
+    <div className="teacher-dashboard">
+      {isApproved && (
+        <div className="teacher-welcome">
+          <h1>Welcome, {teacher.name}!</h1>
+          <p>Manage your courses, engage with students, and contribute to our educational community.</p>
+        </div>
+      )}
+      
       <h3>{isApproved ? 'Teacher Dashboard' : 'Teacher Onboarding'}</h3>
       {!isApproved && (
         <>
@@ -114,7 +121,7 @@ export default function TeacherDashboard() {
             onEvaluateAssignments={()=>setShowEvaluateAssignments(true)}
             onViewStudents={()=>setShowViewStudents(true)}
           />
-          <div className="dashboard-grid" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, margin:'16px 0'}}>
+          <div className="dashboard-grid" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:24, margin:'24px 0'}}>
             <NotificationCard 
               notifications={notifications}
               onRefresh={async()=>{ const r=await api.get('/notifications'); setNotifications(r.data.data||[]) }}
@@ -203,22 +210,27 @@ function WinnersPanel() {
 
 function NotificationCard({ notifications, onRefresh, draft, setDraft, onSend }) {
   return (
-    <div className="card" style={{border:'1px solid #e5e7eb', borderRadius:12, padding:16, background:'#fafafa'}}>
-      <h4 style={{marginTop:0}}>Notifications</h4>
-      <div style={{maxHeight:220, overflowY:'auto', marginBottom:12}}>
-        {(notifications||[]).map(n => (
-          <div key={n._id} style={{padding:'8px 10px', borderBottom:'1px solid #eee'}}>
-            <div style={{fontWeight:600}}>{n.title}</div>
-            <div style={{fontSize:14, color:'#444'}}>{n.body}</div>
-            <div style={{fontSize:12, color:'#6b7280'}}>{new Date(n.createdAt).toLocaleString()}</div>
-          </div>
-        ))}
+    <div className="teacher-card">
+      <div className="card-header">
+        <div className="card-icon">📢</div>
+        <h3>Notifications</h3>
       </div>
-      <button className="btn secondary" onClick={onRefresh} style={{marginBottom:8}}>Refresh</button>
-      <div className="auth-form">
-        <input placeholder="Message title to Admin" value={draft.title} onChange={(e)=>setDraft({...draft, title:e.target.value})} />
-        <input placeholder="Write a message..." value={draft.body} onChange={(e)=>setDraft({...draft, body:e.target.value})} />
-        <button className="btn" onClick={onSend} disabled={!draft.title || !draft.body}>Send to Admin</button>
+      <div className="card-body">
+        <div className="notifications-list">
+          {(notifications||[]).map(n => (
+            <div key={n._id} className="notification-item">
+              <div className="notification-title">{n.title}</div>
+              <div className="notification-body">{n.body}</div>
+              <div className="notification-time">{new Date(n.createdAt).toLocaleString()}</div>
+            </div>
+          ))}
+        </div>
+        <button className="btn secondary" onClick={onRefresh} style={{marginBottom:12, width:'100%'}}>Refresh Notifications</button>
+        <div className="auth-form">
+          <input placeholder="Message title to Admin" value={draft.title} onChange={(e)=>setDraft({...draft, title:e.target.value})} />
+          <textarea placeholder="Write your message..." value={draft.body} onChange={(e)=>setDraft({...draft, body:e.target.value})} rows="3" />
+          <button className="btn" onClick={onSend} disabled={!draft.title || !draft.body}>Send to Admin</button>
+        </div>
       </div>
     </div>
   )
@@ -239,28 +251,35 @@ function CommunityCard({ threads, onRefresh, newThread, setNewThread, chatByThre
     await onRefresh()
   }
   return (
-    <div className="card" style={{border:'1px solid #e5e7eb', borderRadius:12, padding:16, background:'#fafafa'}}>
-      <h4 style={{marginTop:0}}>Community</h4>
-      <div className="auth-form" style={{marginBottom:12}}>
-        <input placeholder="Start a new thread (title)" value={newThread.title} onChange={(e)=>setNewThread({ title: e.target.value })} />
-        <button className="btn" onClick={createThread} disabled={!newThread.title}>Create Thread</button>
+    <div className="teacher-card">
+      <div className="card-header">
+        <div className="card-icon">💬</div>
+        <h3>Community</h3>
       </div>
-      <div style={{maxHeight:220, overflowY:'auto', marginBottom:12}}>
-        {(threads||[]).map(t => (
-          <div key={t._id} style={{padding:'8px 10px', borderBottom:'1px solid #eee'}}>
-            <div style={{fontWeight:600}}>{t.title}</div>
-            <div style={{fontSize:12, color:'#6b7280'}}>Messages: {t.messages?.length || 0}</div>
-            <div style={{display:'flex', gap:8, marginTop:6}}>
-              <input placeholder="Write message" value={chatByThread[t._id]||''} onChange={(e)=>setChatByThread(prev=>({ ...prev, [t._id]: e.target.value }))} />
-              <button className="btn" onClick={()=>postMessage(t._id)}>Send</button>
+      <div className="card-body">
+        <div className="auth-form" style={{marginBottom:12}}>
+          <input placeholder="Start a new thread (title)" value={newThread.title} onChange={(e)=>setNewThread({ title: e.target.value })} />
+          <button className="btn" onClick={createThread} disabled={!newThread.title}>Create Thread</button>
+        </div>
+        <div className="threads-list">
+          {(threads||[]).map(t => (
+            <div key={t._id} className="thread-item">
+              <div className="thread-title">{t.title}</div>
+              <div className="thread-meta">Messages: {t.messages?.length || 0}</div>
+              <div className="thread-input">
+                <input placeholder="Write message" value={chatByThread[t._id]||''} onChange={(e)=>setChatByThread(prev=>({ ...prev, [t._id]: e.target.value }))} />
+                <button className="btn" onClick={()=>postMessage(t._id)}>Send</button>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+        <button className="btn secondary" onClick={onRefresh} style={{width:'100%'}}>Refresh Threads</button>
       </div>
-      <button className="btn secondary" onClick={onRefresh}>Refresh</button>
     </div>
   )
 }
+
+// Rest of the component code remains the same...
 
 function ModalShell({ title, onClose, children, actions }) {
   return (
