@@ -7,7 +7,8 @@ const { connectToDatabase } = require('./config/db');
 const apiRouter = require('./routes');
 const { initRealtime } = require('./services/realtime');
 
-loadEnv(); 
+// Load environment variables once
+loadEnv();
 
 const app = express();
 
@@ -20,14 +21,17 @@ app.use(morgan('dev'));
 
 // Health endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', service: 'EcoLearn API', timestamp: new Date().toISOString() });
+  res.status(200).json({
+    status: 'ok',
+    service: 'EcoLearn API',
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // API routes
 app.use('/api', apiRouter);
 
 // Global error handler
-// eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   const status = err.status || 500;
   const message = err.message || 'Internal Server Error';
@@ -41,13 +45,11 @@ const PORT = process.env.PORT || 5000;
 connectToDatabase()
   .then(() => {
     const server = app.listen(PORT, () => {
-      // eslint-disable-next-line no-console
       console.log(`EcoLearn API listening on port ${PORT}`);
     });
     initRealtime(server);
   })
   .catch((error) => {
-    // eslint-disable-next-line no-console
     console.error('Failed to start server:', error);
     process.exit(1);
   });
