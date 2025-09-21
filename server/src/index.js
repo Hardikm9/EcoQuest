@@ -18,12 +18,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan('dev'));
 
-// Health
+// Health endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', service: 'EcoLearn API', timestamp: new Date().toISOString() });
 });
 
-// API
+// API routes
 app.use('/api', apiRouter);
 
 // Global error handler
@@ -35,6 +35,7 @@ app.use((err, req, res, next) => {
   res.status(status).json({ error: { message, details } });
 });
 
+// Use Render-assigned port or fallback to 5000
 const PORT = process.env.PORT || 5000;
 
 connectToDatabase()
@@ -50,5 +51,3 @@ connectToDatabase()
     console.error('Failed to start server:', error);
     process.exit(1);
   });
-
-
