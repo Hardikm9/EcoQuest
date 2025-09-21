@@ -19,6 +19,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(morgan('dev'));
 
+// Root endpoint to prevent 404
+app.get('/', (req, res) => {
+  res.send('EcoQuest API is running. Use /api for endpoints.');
+});
+
 // Health endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({
