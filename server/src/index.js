@@ -7,7 +7,7 @@ const { connectToDatabase } = require('./config/db');
 const apiRouter = require('./routes');
 const { initRealtime } = require('./services/realtime');
 
-loadEnv();
+loadEnv(); 
 
 const app = express();
 
