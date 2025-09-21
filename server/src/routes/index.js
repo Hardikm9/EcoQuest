@@ -10,6 +10,7 @@ const progressRoutes = require('./progress');
 const competitionRoutes = require('./competitions');
 const gameRoutes = require('./games');
 const teacherRoutes = require('./teachers');
+const fileRoutes = require('./files'); // added import
 
 const router = Router();
 
@@ -28,18 +29,6 @@ router.use('/progress', progressRoutes);
 router.use('/competitions', competitionRoutes);
 router.use('/games', gameRoutes);
 router.use('/teachers', teacherRoutes);
-router.use('/files', teacherRoutes); // getFile handler uses /files/:fileId
-
-modul
-// ... other imports
-const fileRoutes = require('./files');
-
-
-
-// ... other router.use() calls
-router.use('/teachers', teacherRoutes);
-router.use('/files', fileRoutes); // Add this line
+router.use('/files', fileRoutes); // correct
 
 module.exports = router;
-
-
