@@ -30,6 +30,16 @@ router.use('/games', gameRoutes);
 router.use('/teachers', teacherRoutes);
 router.use('/files', teacherRoutes); // getFile handler uses /files/:fileId
 
+modul
+// ... other imports
+const fileRoutes = require('./files');
+
+
+
+// ... other router.use() calls
+router.use('/teachers', teacherRoutes);
+router.use('/files', fileRoutes); // Add this line
+
 module.exports = router;
 
 

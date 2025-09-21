@@ -25,7 +25,7 @@ async function incrementMaterial(req, res) {
     const percent = Math.min(100, Math.round(((updated.materialsCompleted + updated.quizzesCompleted + updated.assignmentsSubmitted + updated.gamesCompleted) / (totalMaterials + 3)) * 100));
     updated.progressPercent = percent;
     await updated.save();
-    await updateEcoPoints(req.user.id, 1, { reason: 'content', courseId });
+    await updateEcoPoints(req.user.id, 10, { reason: 'content', courseId });
     res.json({ data: updated });
   } catch (err) {
     res.status(500).json({ error: { message: 'Failed to update progress' } });
@@ -33,5 +33,3 @@ async function incrementMaterial(req, res) {
 }
 
 module.exports = { getMyProgress, incrementMaterial };
-
-

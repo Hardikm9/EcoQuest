@@ -50,7 +50,7 @@ function Home() {
 function Courses() {
   const [courses, setCourses] = useState([])
   useEffect(() => {
-    axios.get('/api/courses').then(r => setCourses(r.data.data || [])).
+    api.get('/courses').then(r => setCourses(r.data.data || [])).
       catch(() => setCourses([]))
   }, [])
   return (
@@ -131,6 +131,10 @@ export default function Dashboard() {
     if (!user || user.role !== 'student') return
     api.get('/teachers/approved').then(r => setApprovedTeachers(r.data.data||[])).catch(()=>setApprovedTeachers([]))
     api.get('/progress/me').then(r => setProgressList(r.data.data||[])).catch(()=>setProgressList([]))
+    api.get('/auth/me/selected-teachers').then(r => {
+        setSelectedTeacherIds(r.data.data.map(t => t.id))
+        setSelectedTeachers(r.data.data)
+    })
   }, [user?.id])
 
   if (!user || loading) return <div>Loading...</div>
@@ -141,10 +145,11 @@ export default function Dashboard() {
   async function saveSelectedTeachers() {
     await api.post('/auth/me/selected-teachers', { teacherIds: selectedTeacherIds })
     setSelectedTeachers(approvedTeachers.filter(t => selectedTeacherIds.includes(t.id)))
+    setShowTeacherSelect(false);
   }
 
   async function openTeacherResources(teacherId) {
-    const res = await axios.get('/api/courses', { params: { teacher: teacherId } })
+    const res = await api.get('/courses', { params: { teacher: teacherId } })
     setTeacherCourses(res.data.data || [])
   }
 
@@ -187,6 +192,16 @@ export default function Dashboard() {
               <div className="card-title">Community</div>
               <div className="card-body">Join the open community chat</div>
               <button className="btn" onClick={()=>window.open('/community', '_blank', 'noopener,noreferrer')}>Open</button>
+            </div>
+            <div className="card">
+              <div className="card-title">Sort Game</div>
+              <div className="card-body">Sort the thing og environment.</div>
+              <button className="btn" onClick={()=>window.open('https://hardikm9.github.io/EcoSort/', '_blank', 'noopener,noreferrer')}>Open</button>
+            </div>
+            <div className="card">
+              <div className="card-title">EcoQuest Game</div>
+              <div className="card-body">An interactive Puzzle Game with Quiz.</div>
+              <button className="btn" onClick={()=>window.open('http://localhost:3000/', '_blank', 'noopener,noreferrer')}>Open</button>
             </div>
           </div>
         )}
@@ -268,8 +283,7 @@ export default function Dashboard() {
                         <div><strong>{c.title}</strong> — {c?.teacher?.name}</div>
                         <div style={{fontSize:13, color:'#6b7280'}}>{c.description}</div>
                         <div style={{display:'flex', gap:8, marginTop:6}}>
-                          <button className="btn btn-outline" onClick={async()=>{ await api.post(`/progress/course/${c._id}/material`); const r = await api.get('/progress/me'); setProgressList(r.data.data||[]) }}>Mark Content Read (+1)</button>
-                          <Link className="btn" to={`courses/${c._id}`}>Open Detail</Link>
+                          <Link className="btn" to={`/app/courses/${c._id}`}>Open Detail</Link>
                         </div>
                       </li>
                     ))}
@@ -378,5 +392,3 @@ function TeacherOnboarding() {
     </div>
   )
 }
-
-

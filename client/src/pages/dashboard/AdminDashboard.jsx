@@ -81,6 +81,12 @@ export default function AdminDashboard() {
     await openList()
     await loadStats() // Refresh stats after approval
   }
+  
+  const setCourseApproval = async (courseId, isApproved) => {
+    await api.post('/admin/approve-course', { courseId, isApproved });
+    await loadAllContent();
+    await loadStats();
+  };
 
   async function viewResume(teacherId) {
     try {
@@ -103,10 +109,17 @@ export default function AdminDashboard() {
     setStudents(r.data.data || [])
   }
 
-  async function loadContent() {
-    const r = await api.get('/admin/content')
-    setContent(r.data.data || [])
-  }
+   const loadAllContent = async () => {
+    setLoading(true);
+    try {
+        const r = await api.get('/admin/content');
+        setContent(r.data.data || []);
+    } catch (error) {
+        console.error("Failed to load content:", error);
+    } finally {
+        setLoading(false);
+    }
+  };
 
   // Function to open card in new window
   const openCardInNewWindow = (cardId, loadFunction) => {
@@ -115,6 +128,13 @@ export default function AdminDashboard() {
     if (loadFunction) loadFunction()
   }
 
+  const openView = (viewName, loadFunction) => {
+    setView(viewName);
+    if (loadFunction) {
+      loadFunction();
+    }
+  };
+  
   // Enhanced Logout function
   const confirmLogout = () => {
     if (window.confirm("Are you sure you want to logout?")) {
@@ -136,24 +156,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="admin-dashboard">
-      {/* <div className="floating-leaves">
-        <span className="leaf-float" style={{ left: "8%", top: "20%" }}>🍃</span>
-        <span className="leaf-float-delayed" style={{ left: "18%", top: "60%" }}>🍀</span>
-        <span className="leaf-float-slow" style={{ left: "78%", top: "30%" }}>🌿</span>
-        <span className="leaf-float-fast" style={{ left: "65%", top: "75%" }}>🍃</span>
-        <span className="icon-float" style={{ left: "35%", top: "40%" }}>💧</span>
-        <span className="icon-float-delayed" style={{ left: "85%", top: "15%" }}>☀️</span>
-        <span className="eco-float" style={{ left: "55%", top: "55%" }}>♻️</span>
-        <span className="eco-float-delayed" style={{ left: "25%", top: "75%" }}>🌎</span>
-        <span className="star-float" style={{ left: "15%", top: "35%" }}>⭐</span>
-        <span className="star-float-delayed" style={{ left: "85%", top: "65%" }}>🌟</span>
-        <span className="star-float-fast" style={{ left: "45%", top: "15%" }}>✨</span>
-        <span className="star-float-slow" style={{ left: "75%", top: "85%" }}>💫</span>
-      </div> */}
-
-      {/* Welcome Section */}
-      
-      {/* Header with Logout Button */}
       <div className="admin-header">
         <div className="admin-welcome">
           <div className="welcome-header">
@@ -198,7 +200,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Broadcast Section */}
       <div className="admin-card">
         <div className="card-header">
           <h3>Broadcast Notification</h3>
@@ -231,7 +232,6 @@ export default function AdminDashboard() {
       <br />
       <br />
 
-      {/* Admin Cards Grid */}
       <div className="admin-cards-grid">
         <AdminCard 
           id="resume" 
@@ -270,7 +270,7 @@ export default function AdminDashboard() {
           description="Review courses, quizzes, assignments, and learning materials for quality."
           stats={stats.courses}
           statLabel="Published Courses"
-          onOpen={() => openCardInNewWindow('content', loadContent)}
+          onOpen={() => openCardInNewWindow('content', loadAllContent)}
         />
         
         <AdminCard 
@@ -300,7 +300,6 @@ export default function AdminDashboard() {
         
       </div>
 
-      {/* Card Detail Views */}
       {view === 'resume' && (
         <ResumeReviewView 
           loading={loading}
@@ -329,6 +328,7 @@ export default function AdminDashboard() {
         <ContentView 
           content={content}
           onClose={() => { setView('home'); setActiveCard(null) }}
+          setCourseApproval={setCourseApproval}
         />
       )}
 
@@ -351,7 +351,6 @@ export default function AdminDashboard() {
   )
 }
 
-// Admin Card Component
 function AdminCard({ id, icon, title, description, stats, statLabel, onOpen }) {
   return (
     <div className="admin-card card-hover">
@@ -375,7 +374,6 @@ function AdminCard({ id, icon, title, description, stats, statLabel, onOpen }) {
   )
 }
 
-// Resume Review View Component
 function ResumeReviewView({ loading, teachers, onClose, viewResume, setApproval }) {
   return (
     <div className="flyout-panel show">
@@ -429,7 +427,6 @@ function ResumeReviewView({ loading, teachers, onClose, viewResume, setApproval 
   )
 }
 
-// Approved Teachers View Component
 function ApprovedTeachersView({ teachers, onClose }) {
   return (
     <div className="flyout-panel show">
@@ -464,7 +461,6 @@ function ApprovedTeachersView({ teachers, onClose }) {
   )
 }
 
-// Students View Component
 function StudentsView({ students, onClose }) {
   return (
     <div className="flyout-panel show">
@@ -505,50 +501,50 @@ function StudentsView({ students, onClose }) {
   )
 }
 
-// Content View Component
-function ContentView({ content, onClose }) {
-  return (
-    <div className="flyout-panel show">
-      <div className="panel-header">
-        <h3>Content Review</h3>
-        <button className="btn btn-outline" onClick={onClose}>Close</button>
-      </div>
-      <div className="table-container">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Course</th>
-              <th>Teacher</th>
-              <th>Materials</th>
-              <th>Quizzes</th>
-              <th>Assignments</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {content.map(c => (
-              <tr key={c.id}>
-                <td>{c.title}</td>
-                <td>{c.teacher?.name} ({c.teacher?.email})</td>
-                <td>{c.materialsCount}</td>
-                <td>{c.quizzesCount}</td>
-                <td>{c.assignmentsCount}</td>
-                <td>
-                  <a className="btn btn-outline" href={`/course/${c.id}`} target="_blank" rel="noreferrer">
-                    Review
-                  </a>
-                </td>
+function ContentView({ content, onClose, setCourseApproval }) {
+    return (
+      <div className="flyout-panel show">
+        <div className="panel-header">
+          <h3>Content Review</h3>
+          <button className="btn btn-outline" onClick={onClose}>Close</button>
+        </div>
+        <div className="table-container">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Course Title</th>
+                <th>Teacher</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-        {content.length === 0 && <div className="empty-state">No content available yet.</div>}
+            </thead>
+            <tbody>
+              {content.length === 0 ? (
+                <tr><td colSpan="4" className="empty-state">No courses found.</td></tr>
+              ) : (
+                content.map(c => (
+                  <tr key={c.id}>
+                    <td>{c.title}</td>
+                    <td>{c.teacher?.name || 'N/A'}</td>
+                    <td>
+                      <span className={`status-badge ${c.isApproved ? 'approved' : 'pending'}`}>
+                        {c.isApproved ? 'Approved' : 'Pending'}
+                      </span>
+                    </td>
+                    <td className="actions-cell">
+                      <button onClick={() => setCourseApproval(c.id, true)} className="btn btn-success" disabled={c.isApproved}>Approve</button>
+                      <button onClick={() => setCourseApproval(c.id, false)} className="btn btn-danger" disabled={!c.isApproved}>Reject</button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
-  )
-}
+    );
+  }
 
-// Notifications View Component
 function NotificationsView({ broadcast, setBroadcast, sentInfo, setSentInfo, onClose }) {
   const [studentMessage, setStudentMessage] = useState({ email: '', title: '', body: '' })
   const [teacherMessage, setTeacherMessage] = useState({ email: '', title: '', body: '' })
@@ -655,7 +651,6 @@ function NotificationsView({ broadcast, setBroadcast, sentInfo, setSentInfo, onC
   )
 }
 
-// Leaderboard Config View Component
 function LeaderboardConfigView({ onClose }) {
   const [form, setForm] = useState({ winners: 3, minPoints: 0, period: 'weekly' })
   const [saved, setSaved] = useState('')
@@ -699,7 +694,7 @@ function LeaderboardConfigView({ onClose }) {
           Save and Publish
         </button>
         {saved && <div className="success-message">{saved}</div>}
-      </div>
     </div>
+  </div>
   )
 }

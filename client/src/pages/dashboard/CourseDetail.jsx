@@ -1,33 +1,51 @@
-import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import api from '../../api'
+import { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import api from '../../api';
 
 export default function CourseDetail() {
-  const { id } = useParams()
-  const [course, setCourse] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const { id } = useParams();
+  const [course, setCourse] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [watchedMaterials, setWatchedMaterials] = useState([]);
 
   useEffect(() => {
-    setLoading(true)
-    api.get(`/courses/${id}`).then(r => setCourse(r.data.data)).catch(() => setError('Failed to load')).finally(() => setLoading(false))
-  }, [id])
+    setLoading(true);
+    api.get(`/courses/${id}`).then(r => setCourse(r.data.data)).catch(() => setError('Failed to load')).finally(() => setLoading(false));
+  }, [id]);
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div className="error">{error}</div>
-  if (!course) return null
+  const handleWatchMaterial = (materialId) => {
+    if (watchedMaterials.includes(materialId)) return;
+    api.post(`/progress/course/${course._id}/material`).then(() => {
+        alert('Marked complete. +10 ecoPoints!');
+        setWatchedMaterials([...watchedMaterials, materialId]);
+    });
+  };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div className="error">{error}</div>;
+  if (!course) return null;
 
   return (
     <div>
       <h2>{course.title}</h2>
       <p>{course.description}</p>
+      {course.videoUrl && <video width="100%" controls src={course.videoUrl}></video>}
       <button onClick={()=>api.post(`/courses/${course._id}/enroll`).then(()=>alert('Enrolled'))}>Enroll</button>
       <h4>Materials</h4>
       <ul>
         {(course.materials || []).map((m, i) => (
           <li key={i}>
-            <a href={m.url} target="_blank">[{m.type}] {m.title}</a>
-            <button style={{marginLeft:8}} onClick={()=>api.post(`/progress/course/${course._id}/material`).then(()=>alert('Marked complete'))}>Mark Completed</button>
+            {/* Update the href to point to the new files API endpoint */}
+            <a href={`/api/files/${m.fileId}`} target="_blank" rel="noopener noreferrer">[{m.type}] {m.filename}</a>
+            <label style={{ marginLeft: '10px' }}>
+              <input
+                type="checkbox"
+                checked={watchedMaterials.includes(m._id)}
+                onChange={() => handleWatchMaterial(m._id)}
+              />{' '}
+              Mark as Completed (+10 ecoPoints)
+            </label>
           </li>
         ))}
       </ul>
@@ -47,7 +65,5 @@ export default function CourseDetail() {
         ))}
       </ul>
     </div>
-  )
+  );
 }
-
-

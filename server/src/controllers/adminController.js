@@ -22,6 +22,21 @@ async function approveTeacher(req, res) {
   }
 }
 
+async function approveCourse(req, res) {
+    try {
+      const { courseId, isApproved } = req.body;
+      const course = await Course.findByIdAndUpdate(
+        courseId,
+        { $set: { isApproved: !!isApproved } },
+        { new: true }
+      );
+      if (!course) return res.status(404).json({ error: { message: 'Course not found' } });
+      res.json({ data: course });
+    } catch (err) {
+      res.status(500).json({ error: { message: 'Failed to update approval' } });
+    }
+}
+
 async function listUsers(req, res) {
   try {
     const users = await User.find().select('name email role ecoPoints');
@@ -39,8 +54,6 @@ async function getLeaderboard(req, res) {
     res.status(500).json({ error: { message: 'Failed to get leaderboard' } });
   }
 }
-
-module.exports = { approveTeacher, listUsers, getLeaderboard };
 
 async function listTeachersDetailed(req, res) {
   try {
@@ -91,10 +104,6 @@ async function listStudentsDetailed(req, res) {
   }
 }
 
-module.exports.listTeachersDetailed = listTeachersDetailed;
-module.exports.listStudentsDetailed = listStudentsDetailed;
-
-// ADMIN: Broadcast a notification to a role (teachers or students)
 async function broadcastNotification(req, res) {
   try {
     const { audience, title, body } = req.body; // audience: 'teachers' | 'students' | 'all'
@@ -119,9 +128,6 @@ async function broadcastNotification(req, res) {
   }
 }
 
-module.exports.broadcastNotification = broadcastNotification;
-
-// List approved teachers only with basic details and course counts
 async function listApprovedTeachers(req, res) {
   try {
     const docs = await Teacher.find({ isApproved: true }).populate('user','name email');
@@ -136,7 +142,6 @@ async function listApprovedTeachers(req, res) {
   }
 }
 
-// List content overview uploaded by teachers (courses with nested assets counts)
 async function listAllContent(req, res) {
   try {
     const courses = await Course.find().populate('teacher','name email');
@@ -147,6 +152,7 @@ async function listAllContent(req, res) {
       materialsCount: (c.materials||[]).length,
       quizzesCount: (c.quizzes||[]).length,
       assignmentsCount: (c.assignments||[]).length,
+      isApproved: c.isApproved,
     }));
     res.json({ data: result });
   } catch (err) {
@@ -154,10 +160,6 @@ async function listAllContent(req, res) {
   }
 }
 
-module.exports.listApprovedTeachers = listApprovedTeachers;
-module.exports.listAllContent = listAllContent;
-
-// Configure leaderboard winners and publish announcement
 async function configureLeaderboard(req, res) {
   try {
     const { winners, minPoints, period } = req.body;
@@ -186,7 +188,4 @@ async function getLatestWinners(req, res) {
   }
 }
 
-module.exports.configureLeaderboard = configureLeaderboard;
-module.exports.getLatestWinners = getLatestWinners;
-
-
+module.exports = { approveTeacher, listUsers, getLeaderboard, listTeachersDetailed, listStudentsDetailed, broadcastNotification, listApprovedTeachers, listAllContent, configureLeaderboard, getLatestWinners, approveCourse };

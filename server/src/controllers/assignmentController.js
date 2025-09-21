@@ -46,6 +46,7 @@ async function submitAssignment(req, res) {
       { $inc: { assignmentsSubmitted: 1 } },
       { upsert: true }
     );
+    await updateEcoPoints(req.user.id, 10, { reason: 'assignment', assignmentId });
     res.json({ data: assignment });
   } catch (err) {
     res.status(500).json({ error: { message: 'Failed to submit assignment' } });
@@ -72,7 +73,7 @@ async function gradeSubmission(req, res) {
     await assignment.save();
     // Award points based on grade percentage of assignment points
     const earned = Math.round((value.grade / 100) * (assignment.points || 20));
-    await updateEcoPoints(sub.student, earned, { reason: 'assignment', assignmentId });
+    await updateEcoPoints(sub.student, earned, { reason: 'assignment_graded', assignmentId });
     res.json({ data: sub });
   } catch (err) {
     res.status(500).json({ error: { message: 'Failed to grade submission' } });
@@ -93,5 +94,3 @@ async function getAssignment(req, res) {
 }
 
 module.exports = { createAssignment, submitAssignment, gradeSubmission, getAssignment };
-
-

@@ -40,8 +40,12 @@ async function submitQuiz(req, res) {
     if (!quiz) return res.status(404).json({ error: { message: 'Quiz not found' } });
     const answers = value.answers;
     let score = 0;
+    let correctAnswers = 0;
     quiz.questions.forEach((q, idx) => {
-      if (answers[idx] === q.correctIndex) score += q.points || 0;
+      if (answers[idx] === q.correctIndex) {
+        score += q.points || 0;
+        correctAnswers++;
+      }
     });
     // Update progress and ecoPoints
     await Progress.findOneAndUpdate(
@@ -49,7 +53,7 @@ async function submitQuiz(req, res) {
       { $inc: { quizzesCompleted: 1 }, $set: {} },
       { upsert: true }
     );
-    await updateEcoPoints(req.user.id, score, { reason: 'quiz', quizId: quiz._id });
+    await updateEcoPoints(req.user.id, correctAnswers * 10, { reason: 'quiz', quizId: quiz._id });
     res.json({ data: { score } });
   } catch (err) {
     res.status(500).json({ error: { message: 'Failed to submit quiz' } });
@@ -57,5 +61,3 @@ async function submitQuiz(req, res) {
 }
 
 module.exports = { createQuiz, submitQuiz };
-
-

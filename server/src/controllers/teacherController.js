@@ -138,7 +138,32 @@ async function getFile(req, res) {
     return res.status(500).json({ error: { message: 'Failed to load file' } });
   }
 }
+// This function should be in your teacherController.js or courseController.js
+// It replaces the old addMaterial function.
+async function addMaterial(req, res) {
+  try {
+    // The 'upload' middleware adds the 'file' object to the request
+    if (!req.file) {
+      return res.status(400).json({ error: { message: 'File upload is required.' } });
+    }
 
+    const { type, title, description } = req.body;
+    const { id: fileId, filename, contentType } = req.file;
+    const course = await Course.findById(req.params.id);
+
+    if (!course) return res.status(404).json({ error: { message: 'Course not found' } });
+    if (String(course.teacher) !== req.user.id) return res.status(403).json({ error: { message: 'Forbidden' } });
+
+    course.materials.push({ type, title, description, fileId, filename, contentType });
+    await course.save();
+    res.status(201).json({ data: course.materials[course.materials.length - 1] });
+  } catch (err) {
+    res.status(500).json({ error: { message: 'Failed to add material' } });
+  }
+}
+
+// Ensure you export this function
+module.exports.addMaterial = addMaterial;
 module.exports = { uploadResume, getResume, updateProfile, getMyProfile, upload, uploadFile, getFile };
 
 
